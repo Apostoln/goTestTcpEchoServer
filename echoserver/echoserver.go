@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 )
 
 const (
@@ -15,6 +16,7 @@ type Server struct {
 	Ip   string
 	Port string
 	Connections map[*net.Conn] bool //set emulation, kill me please
+	ConnectionsMutex sync.Mutex
 }
 
 func New(ip string, port string) Server {
@@ -46,11 +48,17 @@ func (server *Server) Run() {
 			continue
 		}
 
+		server.ConnectionsMutex.Lock()
 		server.Connections[&connection] = true
+		server.ConnectionsMutex.Unlock()
 
 		go func() {
 			defer connection.Close()
-			defer delete(server.Connections, &connection)
+			defer func() {
+				server.ConnectionsMutex.Lock()
+				defer server.ConnectionsMutex.Unlock()
+				delete(server.Connections, &connection)
+			}()
 
 			buffer := make([]byte, BUFFER_SIZE)
 			for {
