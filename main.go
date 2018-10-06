@@ -7,19 +7,19 @@ import (
 )
 
 var (
-	ip   string
-	port string
+	ipFlag   string
+	portFlag string
 )
 
 func init() {
-	flag.StringVar(&ip, "ip", "", "server ip address")
-	flag.StringVar(&port, "port", "", "server port")
+	flag.StringVar(&ipFlag, "ip", "", "server ipFlag address")
+	flag.StringVar(&portFlag, "port", "", "server portFlag")
 	flag.Parse()
 }
 
 func main() {
-	fmt.Println("Server run on", ip+":"+port)
-	server := &echoserver.Server{Ip: ip, Port: port}
+	fmt.Println("Server run on", ipFlag+":"+portFlag)
+	server := echoserver.New(ipFlag, portFlag)
 	server.Run()
 	return
 }

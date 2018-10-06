@@ -14,10 +14,25 @@ const (
 type Server struct {
 	Ip   string
 	Port string
+	Connections map[*net.Conn] bool //set emulation, kill me please
 }
 
-func (server *Server) Run() {
+func New(ip string, port string) Server {
+	res := Server{Ip:ip, Port:port}
+	res.Connections = make(map[*net.Conn] bool)
+	return res
+}
 
+func (server *Server) Write(bytes []byte) {
+	for conn, _ := range server.Connections {
+		(*conn).Write(bytes) //TODO: how to do it without (*conn)
+
+	}
+
+}
+
+
+func (server *Server) Run() {
 	listener, err := net.Listen(TCP, server.Ip+":"+server.Port)
 	if err != nil {
 		fmt.Println("Error:", err.Error())
@@ -31,8 +46,11 @@ func (server *Server) Run() {
 			continue
 		}
 
+		server.Connections[&connection] = true
+
 		go func() {
 			defer connection.Close()
+			defer delete(server.Connections, &connection)
 
 			buffer := make([]byte, BUFFER_SIZE)
 			for {
@@ -44,7 +62,7 @@ func (server *Server) Run() {
 					return
 				}
 				fmt.Println(connection.RemoteAddr(), ">>", string(buffer[:size]))
-				connection.Write(buffer[:size])
+				server.Write(buffer[:size])
 			}
 		}()
 	}
